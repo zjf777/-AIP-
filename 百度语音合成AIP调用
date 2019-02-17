@@ -1,0 +1,26 @@
+#@Author:saviour_zjf
+#@Date:2019/2/14 10:19
+
+import os
+from aip import AipSpeech #百度语音合成
+
+app_id = "14975947"
+api_key = "X9f3qewZCohppMHxlunznUbi"
+secret_key = "LupWgIIFzZ9kTVNZSH5G0guNGZIqqTom"
+client = AipSpeech(app_id, api_key, secret_key)
+
+def word2voice(file,MP3_name):
+    with open(file,"r",encoding="utf-8") as f:
+        res = f.read()
+        print("正在转换{}".format(file))
+        while len(res) >= 2000:
+            tmp = res[:200]
+            result = client.synthesis(tmp,"zh",1,{
+                "vol": 8,  # 音量
+                "spd": 4,  # 语速
+                "pit": 7,  # 语调
+                "per": 3,  # 3：逍遥音 4：萝莉音
+
+            })
+            with open("{}.mp3".format(MP3_name),"ab") as f:
+                f.write(result)
