@@ -1,0 +1,46 @@
+#@Author:saviour_zjf
+#@Date:2019/2/14 10:19
+
+import requests
+from lxml import etree
+import os
+import  voice
+
+
+class Spider(object):
+    def start_request(self):
+        res = requests.get("https://www.qidian.com/all") #流程1：调用get()函数获取起点中文网首页源代码,获取小说名作为文件夹命名。
+        # print(res.text)
+        html = etree.HTML(res.content.decode())  #网页源代码解析为_Element对象 方便用xpath（）进行解析
+        bigtitle_list = html.xpath('//div[@class ="book-mid-info"]/h4/a/text()')
+        bigtit_url_list = html.xpath('//div[@class ="book-mid-info"]/h4/a/@href') #注意：xpath返回的是一个列表
+        print(bigtitle_list,bigtit_url_list)
+        for bigtitle,bigtit_url in zip(bigtitle_list,bigtit_url_list):
+            if os.path.exists(bigtitle) ==False:
+                os.mkdir(bigtitle) #创建文件夹流程：1.判断根目录下是否存在该命名的文件夹，如果没有则创建。
+            self.get_2nd_request(bigtitle,bigtit_url)
+
+    def get_2nd_request(self,bigtitle,bigtit_url):
+        res = requests.get("http:" + bigtit_url)
+        html = etree.HTML(res.content.decode())
+        littitle_list = html.xpath('//ul[@class = "cf"]/li/a/text()')
+        littitle_url_list = html.xpath('//ul[@class = "cf"]/li/a/@href')
+        # print(littitle_list,littitle_url_list)
+        for littitle,littitle_url in zip(littitle_list,littitle_url_list):
+            self.finally_file(littitle,littitle_url,bigtitle)
+
+    def finally_file(self,littitle,littitle_url,bigtitle):
+        res = requests.get("http:" + littitle_url)
+        html = etree.HTML(res.content.decode())
+        article ="\n".join(html.xpath('//div[@class = "read-content j_readContent"]/p/text()'))  ###!!!!重点注意：
+                                                                                    # xpath返回的是一个列表，可以用.join（）转换为字符串储存！！！
+        article_name = bigtitle + "\\" + littitle + ".txt"
+        MP3_name = bigtitle + "\\" + littitle + ".mp3"
+        print("正在下载文章: " + article_name)
+        #保存文件
+        with open(article_name,"a",encoding= "utf-8") as f:
+            f.write(article)
+        voice.word2voice(article_name,MP3_name)
+
+s = Spider()
+s.start_request()
